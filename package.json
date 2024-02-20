@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "run": "ts-node src/index.ts",
+    "run": "tsx src/index.ts",
     "lint": "run-p -l -c --aggregate-output lint:*",
     "lint:tsc": "tsc --noEmit",
     "lint:eslint": "eslint src",
@@ -19,9 +19,10 @@
     "@typescript-eslint/parser": "^7.0.2",
     "eslint": "^8.56.0",
     "eslint-config-prettier": "^9.1.0",
+    "j-gitadora-psup": "file:../j_gitadora_psup",
     "npm-run-all": "^4.1.5",
     "prettier": "^3.2.5",
-    "ts-node": "^10.9.2",
+    "tsx": "^4.7.1",
     "typescript": "^5.3.3"
   }
 }
