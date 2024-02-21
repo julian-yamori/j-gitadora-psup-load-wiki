@@ -16,17 +16,20 @@ export default async function registerFromIssues(
 ): Promise<void> {
   // トランザクションを 100 レコードずつに分ける
   for (const block of splitIssueArray(issues)) {
-    await prismaClient.$transaction(async (tx) => {
-      const repo = new TrackRepository(tx);
-      await Promise.all(block.map((i) => registerOneIssue(tx, i, repo)));
-    });
+    await prismaClient.$transaction(
+      async (tx) => {
+        const repo = new TrackRepository(tx);
+        await Promise.all(block.map((i) => registerOneIssue(tx, i, repo)));
+      },
+      { maxWait: 5000, timeout: 10000 },
+    );
   }
 }
 
 function splitIssueArray(
   issues: ReadonlyArray<WikiLoadingIssue>,
 ): WikiLoadingIssue[][] {
-  const CYCLE = 100;
+  const CYCLE = 1;
 
   const results: WikiLoadingIssue[][] = [];
   for (let i = 0; i < issues.length; i += CYCLE) {
