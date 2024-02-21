@@ -1,5 +1,3 @@
-import LoadWikiHtmlQueryService from "../db/load_wiki_html_query_service";
-import TrackRepository from "j-gitadora-psup/src/db/track/track_repository";
 import {
   TrackDiffirence,
   WikiLoadingIssue,
@@ -20,24 +18,22 @@ import crypto from "node:crypto";
  * @param newTracksHTML 「新曲リスト」ページの曲テーブルのHTML
  * @param oldGFDMTracksHTML 「旧曲リスト(初代〜XG3)」ページの曲テーブルのHTML
  * @param oldGDTracksHTML 「旧曲リスト(GITADORA)」ページの曲テーブルのHTML
+ * @param existingTrackMap DB に既に存在する曲 (キー = 曲名, 値 = ID)
  */
 export default async function loadWikiHTML({
   newTracksHTML,
   oldGFDMTracksHTML,
   oldGDTracksHTML,
-  dbQueryService,
-  trackRepository,
+  existingTrackMap,
+  loadTrackFromDb,
 }: {
   newTracksHTML: string;
   oldGFDMTracksHTML: string;
   oldGDTracksHTML: string;
-  dbQueryService: LoadWikiHtmlQueryService;
-  trackRepository: TrackRepository;
+  existingTrackMap: Map<string, string>;
+  loadTrackFromDb: (id: string) => Promise<Track | undefined>;
 }): Promise<WikiLoadingIssue[]> {
   const config = await readLoadWikiConfig();
-
-  // 既存の曲のMapを取得
-  const existingTrackMap = await dbQueryService.existingTracks();
 
   // HTML解析、NG曲除去、重複曲マージ
   const parsedRows = mergeRowsDuplicate(
@@ -59,7 +55,7 @@ export default async function loadWikiHTML({
     const issue = await parsedRowToIssue(
       row,
       existingTrackMap,
-      trackRepository,
+      loadTrackFromDb,
     );
     if (issue !== undefined) {
       issues.push(issue);
@@ -154,7 +150,7 @@ function mergeRowsDuplicate(
 async function parsedRowToIssue(
   row: ParsedTrack | WikiLoadingIssueError,
   existingTrackMap: Map<string, string>,
-  trackRepository: TrackRepository,
+  loadTrackFromDb: (id: string) => Promise<Track | undefined>,
 ): Promise<WikiLoadingIssue | undefined> {
   // typeがあればWikiLoadingIssueError型と判断する
   if ("type" in row) return row;
@@ -174,7 +170,7 @@ async function parsedRowToIssue(
   existingTrackMap.delete(row.title);
 
   // 既存の曲データと比較
-  const oldTrack = await trackRepository.get(existingId);
+  const oldTrack = await loadTrackFromDb(existingId);
   if (oldTrack === undefined) throw Error(`Track not found : ${existingId}`);
 
   const diffirences = compareTrack(oldTrack, row);
