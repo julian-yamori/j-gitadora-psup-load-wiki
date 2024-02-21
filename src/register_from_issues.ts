@@ -14,29 +14,14 @@ import prismaClient, { PrismaTransaction } from "./db/prisma_client";
 export default async function registerFromIssues(
   issues: ReadonlyArray<WikiLoadingIssue>,
 ): Promise<void> {
-  // トランザクションを 100 レコードずつに分ける
-  for (const block of splitIssueArray(issues)) {
-    await prismaClient.$transaction(
-      async (tx) => {
+  await Promise.all(
+    issues.map((issue) =>
+      prismaClient.$transaction((tx) => {
         const repo = new TrackRepository(tx);
-        await Promise.all(block.map((i) => registerOneIssue(tx, i, repo)));
-      },
-      { maxWait: 5000, timeout: 10000 },
-    );
-  }
-}
-
-function splitIssueArray(
-  issues: ReadonlyArray<WikiLoadingIssue>,
-): WikiLoadingIssue[][] {
-  const CYCLE = 1;
-
-  const results: WikiLoadingIssue[][] = [];
-  for (let i = 0; i < issues.length; i += CYCLE) {
-    results.push(issues.slice(i, i + CYCLE));
-  }
-
-  return results;
+        return registerOneIssue(tx, issue, repo);
+      }),
+    ),
+  );
 }
 
 async function registerOneIssue(
