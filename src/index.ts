@@ -2,11 +2,10 @@ import fs from "node:fs";
 import readline from "node:readline";
 import process from "node:process";
 import TrackRepository from "j-gitadora-psup/src/db/track/track_repository";
-import updateSkillPoint from "j-gitadora-psup/src/db/track/update_skill_point";
 import prismaClient from "./db/prisma_client";
 import LoadWikiHtmlQueryService from "./db/load_wiki_html_query_service";
 import loadWikiHTML from "./domain/load_wiki_html";
-import registerFromIssues from "./domain/register_from_issues";
+import registerFromIssues from "./register_from_issues";
 import printIssues from "./print_issues";
 
 (async (): Promise<void> => {
@@ -40,18 +39,9 @@ import printIssues from "./print_issues";
     return;
   }
 
-  // todo 件数が多すぎるなら分ける
-  await prismaClient.$transaction(
-    async (tx) => {
-      const updatedTrackIds = await registerFromIssues(
-        issues,
-        new TrackRepository(tx),
-      );
-
-      await Promise.all(updatedTrackIds.map((id) => updateSkillPoint(tx, id)));
-    },
-    { timeout: 30000 },
-  );
+  await registerFromIssues(issues);
+  console.log("end");
+  return;
 })().catch((e) => console.error(e));
 
 function readFile(path: string): Promise<string> {
