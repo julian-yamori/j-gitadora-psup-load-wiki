@@ -4,8 +4,8 @@ import {
   WikiLoadingIssueDelete,
   WikiLoadingIssueError,
 } from "./wiki_loading_issue";
-import { ParsedTrack, isEqualsParsedTrack } from "./parsed_track";
-import parseHTML from "./parse_html";
+import { ParsedTrack, isEqualsParsedTrack } from "./parse_html/parsed_track";
+import parseHTML from "./parse_html/parse_html";
 import { Track, lvToString } from "j-gitadora-psup/src/domain/track/track";
 import { skillTypeToStr } from "j-gitadora-psup/src/domain/track/skill_type";
 import { openTypeToStr } from "j-gitadora-psup/src/domain/track/open_type";

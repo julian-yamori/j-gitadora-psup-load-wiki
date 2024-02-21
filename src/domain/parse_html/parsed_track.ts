@@ -1,7 +1,7 @@
 import { Score } from "j-gitadora-psup/src/domain/track/track";
 import { Track } from "j-gitadora-psup/src/domain/track/track";
 import { Difficulty } from "j-gitadora-psup/src/domain/track/difficulty";
-import { WikiLoadingSource } from "./wiki_loading_source";
+import { WikiLoadingSource } from "../wiki_loading_source";
 
 /** HTMLから読み込んだ直後の曲データ */
 export type ParsedTrack = Omit<Track, "id" | "scores"> & {

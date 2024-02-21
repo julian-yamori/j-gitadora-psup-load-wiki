@@ -6,8 +6,8 @@ import {
 } from "j-gitadora-psup/src/domain/track/difficulty";
 import neverError from "j-gitadora-psup/src/utils/never_error";
 import { Err, Ok, Result } from "j-gitadora-psup/src/utils/result";
-import { WikiLoadingSource } from "./wiki_loading_source";
-import { WikiLoadingIssueError } from "./wiki_loading_issue";
+import { WikiLoadingSource } from "../wiki_loading_source";
+import { WikiLoadingIssueError } from "../wiki_loading_issue";
 import convertBunrui from "./convert_bunrui";
 import splitRowspan from "./split_rowspan";
 import { ParsedScores, ParsedScore, ParsedTrack } from "./parsed_track";
