@@ -10,33 +10,50 @@ import { openTypeToStr } from "j-gitadora-psup/src/domain/track/open_type";
 import { ALL_DIFFICULTIES } from "j-gitadora-psup/src/domain/track/difficulty";
 import crypto from "node:crypto";
 
+export type ParsedRowToIssueResult = {
+  existingTitle: string | undefined;
+  issue: WikiLoadingIssue | undefined;
+};
+
+export type ParsedRowToIssueResultMatches = {
+  type: "matches";
+  trackTitle: string;
+};
+
+export type ParsedRowToIssueResultIssue = {
+  type: "issue";
+  issue: WikiLoadingIssue;
+};
+
 /**
  * HTMLテーブル1行の解析結果を、WikiLoadingIssueに変換
  * @param row 変換元の曲データ、もしくはエラー情報
  * @param existingTrackMap 既に存在している曲のMap (keyは曲名、valueはID)
- * @returns 変換されたIssue。特に問題がなければundefined
  */
 export async function parsedRowToIssue(
   row: ParsedTrack | WikiLoadingIssueError,
-  existingTrackMap: Map<string, string>,
+  existingTrackMap: ReadonlyMap<string, string>,
   loadTrackFromDb: (id: string) => Promise<Track | undefined>,
-): Promise<WikiLoadingIssue | undefined> {
+): Promise<ParsedRowToIssueResult> {
   // typeがあればWikiLoadingIssueError型と判断する
-  if ("type" in row) return row;
+  if ("type" in row) return { existingTitle: undefined, issue: row };
 
   const existingId = existingTrackMap.get(row.title);
 
   // 曲名が同じ曲がDBに無ければ、新規追加
   if (existingId === undefined) {
     return {
-      type: "new",
-      source: row.source,
-      rowNo: row.rowNo,
-      newTrack: addIdToParsedTrack(row, newTrackId()),
+      existingTitle: undefined,
+      issue: {
+        type: "new",
+        source: row.source,
+        rowNo: row.rowNo,
+        newTrack: addIdToParsedTrack(row, newTrackId()),
+      },
     };
   }
 
-  existingTrackMap.delete(row.title);
+  const existingTitle = row.title;
 
   // 既存の曲データと比較
   const oldTrack = await loadTrackFromDb(existingId);
@@ -45,15 +62,18 @@ export async function parsedRowToIssue(
   const diffirences = compareTrack(oldTrack, row);
   if (diffirences.length > 0) {
     return {
-      type: "diff",
-      source: row.source,
-      rowNo: row.rowNo,
-      newTrack: addIdToParsedTrack(row, existingId),
-      diffirences,
+      existingTitle,
+      issue: {
+        type: "diff",
+        source: row.source,
+        rowNo: row.rowNo,
+        newTrack: addIdToParsedTrack(row, existingId),
+        diffirences,
+      },
     };
   }
 
-  return undefined;
+  return { existingTitle, issue: undefined };
 }
 
 /** TrackNoIdに曲IDを付与 */

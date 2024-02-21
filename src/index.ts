@@ -13,21 +13,18 @@ import printIssues from "./print_issues";
   const oldGFDMTracksHTML = await readFile("htmls/旧曲リスト_GFDM.html");
   const oldGDTracksHTML = await readFile("htmls/旧曲リスト_GD.html");
 
-  const existingTrackMap = await prismaClient.$transaction((tx) => {
-    const service = new LoadWikiHtmlQueryService(tx);
-    return service.existingTracks();
-  });
+  const loadWikiQueryService = new LoadWikiHtmlQueryService(prismaClient);
+  const existingTrackMap = await loadWikiQueryService.existingTracks();
 
   const issues = await loadWikiHTML({
     newTracksHTML,
     oldGFDMTracksHTML,
     oldGDTracksHTML,
     existingTrackMap,
-    loadTrackFromDb: (id: string) =>
-      prismaClient.$transaction((tx) => {
-        const repo = new TrackRepository(tx);
-        return repo.get(id);
-      }),
+    loadTrackFromDb: (id: string) => {
+      const repo = new TrackRepository(prismaClient);
+      return repo.get(id);
+    },
   });
 
   if (issues.length === 0) {

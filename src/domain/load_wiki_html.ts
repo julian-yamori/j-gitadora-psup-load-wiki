@@ -7,7 +7,7 @@ import { ParsedTrack, isEqualsParsedTrack } from "./parse_html/parsed_track";
 import parseHTML from "./parse_html/parse_html";
 import { Track } from "j-gitadora-psup/src/domain/track/track";
 import { LoadWikiConfig, readLoadWikiConfig } from "./load_wiki_config";
-import { parsedRowToIssue } from "./parsed_to_issue";
+import { ParsedRowToIssueResult, parsedRowToIssue } from "./parsed_to_issue";
 
 /**
  * wikiのHTMLから曲情報を読み込み
@@ -43,31 +43,25 @@ export default async function loadWikiHTML({
     ),
   );
 
-  const issues: WikiLoadingIssue[] = [];
-
   // HTMLから取得した曲データをIssueに変換
-  for (const row of parsedRows) {
-    // eslint-disable-next-line no-await-in-loop -- 手続き的な処理のリファクタが面倒なので、一旦 await-in-loop で……
-    const issue = await parsedRowToIssue(
-      row,
-      existingTrackMap,
-      loadTrackFromDb,
-    );
-    if (issue !== undefined) {
-      issues.push(issue);
-    }
-  }
+  const toIssueResults = await Promise.all(
+    parsedRows.map((row) =>
+      parsedRowToIssue(row, existingTrackMap, loadTrackFromDb),
+    ),
+  );
+  const { matchTitles, issues } = splitIssueResults(toIssueResults);
 
-  // 新規データに無い曲IDは削除予定とする
-  issues.push(
-    ...[...existingTrackMap].map(
+  // DBに存在するが、今回読み込んだデータに無い曲は、削除予定とする
+  const deleteIssues = [...existingTrackMap]
+    .filter(([title]) => !matchTitles.has(title))
+    .map(
       ([title, trackId]): WikiLoadingIssueDelete => ({
         type: "delete",
         trackId,
         title,
       }),
-    ),
-  );
+    );
+  issues.push(...deleteIssues);
 
   return issues;
 }
@@ -135,4 +129,27 @@ function mergeRowsDuplicate(
   }
 
   return mergedRows;
+}
+
+/**
+ * 行の解析結果から Issue へ変換した結果の配列を分割
+ */
+function splitIssueResults(results: ReadonlyArray<ParsedRowToIssueResult>): {
+  matchTitles: Set<string>;
+  issues: WikiLoadingIssue[];
+} {
+  const matchTitles = new Set<string>();
+  const issues: WikiLoadingIssue[] = [];
+
+  for (const r of results) {
+    if (r.existingTitle !== undefined) {
+      matchTitles.add(r.existingTitle);
+    }
+
+    if (r.issue !== undefined) {
+      issues.push(r.issue);
+    }
+  }
+
+  return { matchTitles, issues };
 }
