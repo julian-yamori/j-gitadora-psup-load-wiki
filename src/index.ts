@@ -55,7 +55,11 @@ async function confirmRegister(): Promise<boolean> {
     input: process.stdin,
     output: process.stdout,
   });
-  const input = await rl.question("続行しますか? (y/n): ");
 
-  return input === "y";
+  try {
+    const input = await rl.question("続行しますか? (y/n): ");
+    return input === "y";
+  } finally {
+    rl.close();
+  }
 }
