@@ -16,7 +16,6 @@ export default async function registerFromIssues(
 ): Promise<void> {
   // トランザクションを 100 レコードずつに分ける
   for (const block of splitIssueArray(issues)) {
-    console.log("transaction");
     await prismaClient.$transaction(async (tx) => {
       const repo = new TrackRepository(tx);
       await Promise.all(block.map((i) => registerOneIssue(tx, i, repo)));

@@ -40,7 +40,7 @@ import printIssues from "./print_issues";
   }
 
   await registerFromIssues(issues);
-  console.log("end");
+
   return;
 })().catch((e) => console.error(e));
 
