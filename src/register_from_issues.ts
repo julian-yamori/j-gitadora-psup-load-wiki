@@ -15,13 +15,14 @@ import limitedPararellRun from "./limited_pararell_run";
 export default async function registerFromIssues(
   issues: ReadonlyArray<WikiLoadingIssue>,
 ): Promise<void> {
-  const registerTasks = issues.map(
-    (issue) => () =>
-      prismaClient.$transaction((tx) => {
-        const repo = new TrackRepository(tx);
-        return registerOneIssue(tx, issue, repo);
-      }),
-  );
+  const registerTasks = issues.map((issue, i) => () => {
+    console.log(`${i + 1} / ${issues.length}`);
+
+    return prismaClient.$transaction((tx) => {
+      const repo = new TrackRepository(tx);
+      return registerOneIssue(tx, issue, repo);
+    });
+  });
 
   await limitedPararellRun(registerTasks, 5);
 }
