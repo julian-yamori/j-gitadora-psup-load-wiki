@@ -5,6 +5,7 @@ import updateSkillPoint from "j-gitadora-psup/src/db/track/update_skill_point";
 import neverError from "j-gitadora-psup/src/utils/never_error";
 import { WikiLoadingIssue } from "./domain/wiki_loading_issue";
 import prismaClient, { PrismaTransaction } from "./db/prisma_client";
+import limitedPararellRun from "./limited_pararell_run";
 
 /**
  * wikiから読み込みの、一旦保存した問題点からの登録を実行
@@ -14,14 +15,15 @@ import prismaClient, { PrismaTransaction } from "./db/prisma_client";
 export default async function registerFromIssues(
   issues: ReadonlyArray<WikiLoadingIssue>,
 ): Promise<void> {
-  await Promise.all(
-    issues.map((issue) =>
+  const registerTasks = issues.map(
+    (issue) => () =>
       prismaClient.$transaction((tx) => {
         const repo = new TrackRepository(tx);
         return registerOneIssue(tx, issue, repo);
       }),
-    ),
   );
+
+  await limitedPararellRun(registerTasks, 5);
 }
 
 async function registerOneIssue(
