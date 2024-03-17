@@ -1,0 +1,27 @@
+version: "3"
+
+name: jgdps_load_wiki
+
+services:
+  load_wiki:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+    volumes:
+      - type: bind
+        source: ..
+        target: /workspace
+      - type: volume
+        source: node_modules
+        target: /workspace/node_modules
+    networks:
+      - jgdps
+    command: sleep infinity
+
+volumes:
+  node_modules:
+
+networks:
+  jgdps:
+    name: j_gitadora_psup_devcontainer_default
+    external: true
