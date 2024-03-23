@@ -8,16 +8,6 @@ datasource db {
   directUrl = env("POSTGRES_URL_NON_POOLING")
 }
 
-model Score {
-  trackId    String
-  difficulty Int
-  lv         Float
-  Track      Track      @relation(fields: [trackId], references: [id])
-  UserScore  UserScore?
-
-  @@unique([trackId, difficulty])
-}
-
 model Track {
   id        String     @id
   title     String     @unique
@@ -28,9 +18,30 @@ model Track {
   sortTitle String?
   deleted   Boolean
   createdAt DateTime   @default(now())
-  updatedAt DateTime
-  Score     Score[]
-  UserTrack UserTrack?
+  updatedAt DateTime   @updatedAt
+  scores    Score[]
+  userTrack UserTrack?
+}
+
+model Score {
+  trackId    String
+  difficulty Int
+  lv         Float
+  track      Track      @relation(fields: [trackId], references: [id])
+  userScore  UserScore?
+
+  @@unique([trackId, difficulty])
+}
+
+model UserTrack {
+  id        String      @id
+  like      Int?
+  isOpen    Boolean
+  memo      String
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  scores    UserScore[]
+  track     Track       @relation(fields: [id], references: [id])
 }
 
 model UserScore {
@@ -45,59 +56,48 @@ model UserScore {
   wishNextPick    Boolean
   wishPlayed      Boolean
   movieURL        String
-  Score           Score     @relation(fields: [trackId, difficulty], references: [trackId, difficulty])
-  UserTrack       UserTrack @relation(fields: [trackId], references: [id])
+  score           Score     @relation(fields: [trackId, difficulty], references: [trackId, difficulty])
+  userTrack       UserTrack @relation(fields: [trackId], references: [id])
 
   @@unique([trackId, difficulty])
-}
-
-model UserTrack {
-  id        String      @id
-  like      Int?
-  isOpen    Boolean
-  memo      String
-  createdAt DateTime    @default(now())
-  updatedAt DateTime
-  UserScore UserScore[]
-  Track     Track       @relation(fields: [id], references: [id])
-}
-
-model WikiLoadingDiffirence {
-  id               String           @id
-  issueId          String
-  propertyName     String
-  difficulty       Int?
-  oldValue         String?
-  newValue         String?
-  WikiLoadingIssue WikiLoadingIssue @relation(fields: [issueId], references: [id])
 }
 
 model WikiLoadingIssue {
-  id                    String                  @id
-  type                  String
-  source                String?
-  rowNo                 Int?
-  errorMessage          String?
-  WikiLoadingDiffirence WikiLoadingDiffirence[]
-  WikiLoadingNewTrack   WikiLoadingNewTrack?
+  id           String                  @id
+  type         String
+  source       String?
+  rowNo        Int?
+  errorMessage String?
+  diffirences  WikiLoadingDiffirence[]
+  track        WikiLoadingNewTrack?
+}
+
+model WikiLoadingNewTrack {
+  id        String                @id
+  title     String
+  artist    String
+  skillType Int
+  long      Boolean
+  openType  Int
+  scores    WikiLoadingNewScore[]
+  issue     WikiLoadingIssue      @relation(fields: [id], references: [id])
 }
 
 model WikiLoadingNewScore {
-  trackId             String
-  difficulty          Int
-  lv                  Float
-  WikiLoadingNewTrack WikiLoadingNewTrack @relation(fields: [trackId], references: [id])
+  trackId    String
+  difficulty Int
+  lv         Float
+  track      WikiLoadingNewTrack @relation(fields: [trackId], references: [id])
 
   @@unique([trackId, difficulty])
 }
 
-model WikiLoadingNewTrack {
-  id                  String                @id
-  title               String
-  artist              String
-  skillType           Int
-  long                Boolean
-  openType            Int
-  WikiLoadingNewScore WikiLoadingNewScore[]
-  WikiLoadingIssue    WikiLoadingIssue      @relation(fields: [id], references: [id])
+model WikiLoadingDiffirence {
+  id           String           @id
+  issueId      String
+  propertyName String
+  difficulty   Int?
+  oldValue     String?
+  newValue     String?
+  issue        WikiLoadingIssue @relation(fields: [issueId], references: [id])
 }
