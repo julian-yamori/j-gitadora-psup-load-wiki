@@ -1,0 +1,103 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("POSTGRES_PRISMA_URL")
+  directUrl = env("POSTGRES_URL_NON_POOLING")
+}
+
+model Score {
+  trackId    String
+  difficulty Int
+  lv         Float
+  Track      Track      @relation(fields: [trackId], references: [id])
+  UserScore  UserScore?
+
+  @@unique([trackId, difficulty])
+}
+
+model Track {
+  id        String     @id
+  title     String     @unique
+  artist    String
+  skillType Int
+  long      Boolean
+  openType  Int
+  sortTitle String?
+  deleted   Boolean
+  createdAt DateTime   @default(now())
+  updatedAt DateTime
+  Score     Score[]
+  UserTrack UserTrack?
+}
+
+model UserScore {
+  trackId         String
+  difficulty      Int
+  achievement     Float
+  failed          Boolean
+  skillPoint      Float
+  wishPractice    Boolean
+  wishAchievement Boolean
+  wishEvent       Boolean
+  wishNextPick    Boolean
+  wishPlayed      Boolean
+  movieURL        String
+  Score           Score     @relation(fields: [trackId, difficulty], references: [trackId, difficulty])
+  UserTrack       UserTrack @relation(fields: [trackId], references: [id])
+
+  @@unique([trackId, difficulty])
+}
+
+model UserTrack {
+  id        String      @id
+  like      Int?
+  isOpen    Boolean
+  memo      String
+  createdAt DateTime    @default(now())
+  updatedAt DateTime
+  UserScore UserScore[]
+  Track     Track       @relation(fields: [id], references: [id])
+}
+
+model WikiLoadingDiffirence {
+  id               String           @id
+  issueId          String
+  propertyName     String
+  difficulty       Int?
+  oldValue         String?
+  newValue         String?
+  WikiLoadingIssue WikiLoadingIssue @relation(fields: [issueId], references: [id])
+}
+
+model WikiLoadingIssue {
+  id                    String                  @id
+  type                  String
+  source                String?
+  rowNo                 Int?
+  errorMessage          String?
+  WikiLoadingDiffirence WikiLoadingDiffirence[]
+  WikiLoadingNewTrack   WikiLoadingNewTrack?
+}
+
+model WikiLoadingNewScore {
+  trackId             String
+  difficulty          Int
+  lv                  Float
+  WikiLoadingNewTrack WikiLoadingNewTrack @relation(fields: [trackId], references: [id])
+
+  @@unique([trackId, difficulty])
+}
+
+model WikiLoadingNewTrack {
+  id                  String                @id
+  title               String
+  artist              String
+  skillType           Int
+  long                Boolean
+  openType            Int
+  WikiLoadingNewScore WikiLoadingNewScore[]
+  WikiLoadingIssue    WikiLoadingIssue      @relation(fields: [id], references: [id])
+}
